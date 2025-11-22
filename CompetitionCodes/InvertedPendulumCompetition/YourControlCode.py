@@ -1,6 +1,5 @@
 import mujoco
 from stable_baselines3 import SAC
-from rl import myenv
 import os
 import numpy as np
 class YourCtrl:
@@ -14,11 +13,11 @@ class YourCtrl:
     # e = myenv(self.m, self.d, render_mode=None)
     # initial positions
     self.init_qpos = d.qpos.copy()
-    self.model = SAC.load("SAC_test")
+    self.model = SAC.load("SAC_random_anglereward")
     # Control gains (using similar values to CircularMotion)
     # ??????
-    # self.kp = 50.0
-    # self.kd = 3.0
+    self.kp = 50.0
+    self.kd = 3.0
   
     
 
@@ -30,12 +29,17 @@ class YourCtrl:
     # print(self.d.qpos)
     # for i in range(6):
     obs = np.concatenate([self.d.qpos, self.d.qvel], dtype=np.float32)
-    #   self.d.ctrl[i] = 150.0*(self.init_qpos[i] - self.d.qpos[i])  - 5.2 *self.d.qvel[i]
+      # self.d.ctrl[i] = self.kp*(self.init_qpos[i] - self.d.qpos[i])  + self.kd*(-1*self.d.qvel[i])
+      
+      
     action, _ = self.model.predict(obs)
     # print(action)
     for i in range(6):
       self.d.ctrl[i] = action[i]
+    # self.d.ctrl[0] = -1* self.d.qfrc_applied[0]
+    # self.d.ctrl[1] = -1*self.d.qfrc_applied[1]
     # self.d.ctrl[4] = 10
+    # print(self.d.qfrc_applied)
     return True 
 
 

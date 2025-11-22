@@ -275,15 +275,19 @@ def _physics_loop(simulate: _Simulate, loader: Optional[_InternalLoaderType]):
                     pushing_trial_gap = 4.0
                     pushing_duration = 0.1
                     pend_id = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "pendulum")  # Ensure correct object type
+                    
+                    # push pendulum positive direction first
                     if(next_pushing_time < d.time and d.time < next_pushing_time + pushing_duration/2):
                         
                         force[1] = push_force
                         mujoco.mj_applyFT(m, d, force, torque, point, pend_id, d.qfrc_applied)
 
+                    # push pendulum negative direction second
                     if(next_pushing_time + pushing_duration/2 < d.time and d.time < next_pushing_time + pushing_duration):
                         force[1] = -push_force
                         mujoco.mj_applyFT(m, d, force, torque, point, pend_id, d.qfrc_applied)
                     
+                    # increment balance count on success and increase pushing force and repeat above
                     if(next_pushing_time + pushing_duration + 0.5 < d.time):
                         balance_count += 1
                         next_pushing_time += pushing_trial_gap
@@ -295,7 +299,8 @@ def _physics_loop(simulate: _Simulate, loader: Optional[_InternalLoaderType]):
                     # if np.any(np.abs(d.qpos[6]) > np.pi/1.2):
                     #     print("Final Balance Count: ", balance_count)
                     #     exit(0)
-
+                    
+                    # quaternion and rotation matrix
                     quat = d.body(pend_id).xquat
                     R_flat = np.empty(9, dtype=np.float64)
                     mujoco._functions.mju_quat2Mat(R_flat, quat)
@@ -303,10 +308,13 @@ def _physics_loop(simulate: _Simulate, loader: Optional[_InternalLoaderType]):
                     # The local z-axis in world coordinates is the third column of the rotation matrix.
                     local_z = R[:, 2]
 
+                    # checks if robot fails, ie pendulum ends up on the ground
                     if local_z[2] < 0:
                         print("Final Balance Count: ", balance_count)
                         exit(0)
-
+                        # simulate.run = 0 
+                    
+                    # for each sim step, inject noise if on
                     # Inject noise.
                     if simulate.ctrl_noise_std != 0.0:
                         # Convert rate and scale to discrete time (Ornstein–Uhlenbeck).
