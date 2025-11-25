@@ -13,11 +13,11 @@ class YourCtrl:
     # e = myenv(self.m, self.d, render_mode=None)
     # initial positions
     self.init_qpos = d.qpos.copy()
-    self.model = SAC.load("SAC_random_anglereward")
+    self.model = SAC.load("SAC_hp_obs_reward4")
     # Control gains (using similar values to CircularMotion)
     # ??????
-    self.kp = 50.0
-    self.kd = 3.0
+    # self.kp = 70.0
+    # self.kd = 3.0
   
     
 
@@ -28,14 +28,54 @@ class YourCtrl:
     # what do we include in state space?
     # print(self.d.qpos)
     # for i in range(6):
-    obs = np.concatenate([self.d.qpos, self.d.qvel], dtype=np.float32)
-      # self.d.ctrl[i] = self.kp*(self.init_qpos[i] - self.d.qpos[i])  + self.kd*(-1*self.d.qvel[i])
+    q = self.d.qpos[:6]
+    dq = self.d.qvel[:6]
+    ee_bid = self.m.body('EE_Frame').id
+    ee_pos = self.d.body(ee_bid).xpos.copy()      # (3,)
+    ee_quat = self.d.body(ee_bid).xquat.copy()     # (4,)
+    vel = np.zeros(6)
+    mujoco.mj_objectVelocity(self.m, self.d, mujoco.mjtObj.mjOBJ_BODY, ee_bid, vel, flg_local=False)
+    ee_lin_vel = vel[:3]
+    ee_ang_vel = vel[3:]
+    
+    pend_jid = self.m.joint('pend_roll').id
+    theta     = self.d.joint(pend_jid).qpos
+    sin_theta =np.sin(theta)
+    cos_theta = np.cos(theta)
+
+    theta_dot = self.d.joint(pend_jid).qvel
+    pend_bid = self.m.body('pendulum').id
+    pend_pos = self.d.body(pend_bid).xpos.copy()
+
+    ee_to_pendulum = pend_pos - ee_pos
+
+    obs = np.concatenate(
+        [q, 
+          dq,
+          ee_pos,
+          ee_quat,
+          ee_lin_vel,
+          ee_ang_vel,
+          sin_theta,
+          cos_theta,
+          theta_dot,
+          pend_pos,
+          ee_to_pendulum
+          ], 
+        dtype=np.float32)      
+    
+    # self.d.ctrl[i] = self.kp*(self.init_qpos[i] - self.d.qpos[i])  + self.kd*(-1*self.d.qvel[i])
+      # self.d.ctrl[2] = self.kp*(self.init_qpos[2] - self.d.qpos[2])  + self.kd*(-1*self.d.qvel[2])
       
       
     action, _ = self.model.predict(obs)
+    max_ctrl = self.m.actuator_ctrlrange[:, 1]
+  
+    # may have to adjust for scaling
+    scaled = action * max_ctrl
     # print(action)
     for i in range(6):
-      self.d.ctrl[i] = action[i]
+      self.d.ctrl[i] = scaled[i]
     # self.d.ctrl[0] = -1* self.d.qfrc_applied[0]
     # self.d.ctrl[1] = -1*self.d.qfrc_applied[1]
     # self.d.ctrl[4] = 10

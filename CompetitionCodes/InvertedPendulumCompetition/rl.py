@@ -174,7 +174,8 @@ class simenv(gym.Env):
       max_ctrl = self.model.actuator_ctrlrange[:, 1]
 
       # may have to adjust for scaling
-      scaled = min_ctrl + (action + 1) * 0.5 * (max_ctrl - min_ctrl)
+      # scaled = min_ctrl + (action + 1) * 0.5 * (max_ctrl - min_ctrl)
+      scaled = action*max_ctrl
       self.data.ctrl[:] = scaled
       # self.data.ctrl[:] = action
       
@@ -323,7 +324,8 @@ class randomenv(gym.Env):
       max_ctrl = self.model.actuator_ctrlrange[:, 1]
 
       # may have to adjust for scaling
-      scaled = min_ctrl + (action + 1) * 0.5 * (max_ctrl - min_ctrl)
+      # scaled = min_ctrl + (action + 1) * 0.5 * (max_ctrl - min_ctrl)
+      scaled = action * max_ctrl
       self.data.ctrl[:] = scaled
       # self.data.ctrl[:] = action
       
@@ -439,21 +441,21 @@ def main():
     # mj_model = mujoco.MjModel.from_xml_path(robot_model)
     # mj_data = mujoco.MjData(mj_model)
     num_envs = 8
-    env = SubprocVecEnv([make_randenv(robot_model) for _ in range(num_envs)])
-    # env = randomenv(robot_model, "human")
+    # env = SubprocVecEnv([make_randenv(robot_model) for _ in range(num_envs)])
+    env = randomenv(robot_model, "human")
 
     model = SAC(policy="MlpPolicy",env= env, verbose=0)
     # model = SAC.load("SAC_random", env)
     # model.load_replay_buffer("SAC_random_buffer")
     
-    # model.learn(total_timesteps=10000, callback=SACMetricsCallback())
-    time_steps = 500_000
-    chunks = 100_000
-    for i in range(int(time_steps/chunks)):
-        print(f"check point {i}")
-        model.learn(total_timesteps=chunks, callback=SACMetricsCallback())
-        model.save(f"SAC_random_anglereward")
-        model.save_replay_buffer( "SAC_random_anglereward_buffer")
+    model.learn(total_timesteps=10000, callback=SACMetricsCallback())
+    # time_steps = 500_000
+    # chunks = 100_000
+    # for i in range(int(time_steps/chunks)):
+    #     print(f"check point {i}")
+    #     model.learn(total_timesteps=chunks, callback=SACMetricsCallback())
+    #     # model.save(f"SAC_random_anglereward")
+        # model.save_replay_buffer( "SAC_random_anglereward_buffer")
     # save the model in cache so it can be imported later
 if __name__ == '__main__':
     main()
