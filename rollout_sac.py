@@ -30,9 +30,6 @@ def main():
             f"upright={info['upright']: .3f}, torque={info['torque']: .3f}"
         )
 
-        # slow it down a bit so you can see prints
-        time.sleep(0.01)
-
         if terminated or truncated:
             obs, _ = env.reset()
 

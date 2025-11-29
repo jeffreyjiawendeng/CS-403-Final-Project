@@ -14,16 +14,13 @@ def main():
 
     env = MiniArmPendulumEnv(
         xml_path=xml_path,
-        controlled_actuator_name="wrist_pitch",  # or "shoulder_pitch", etc.
+        controlled_actuator_name="wrist_pitch",  # choose joint
         frame_skip=5,
         max_episode_steps=1000,
     )
 
     # Optional: check the environment for Gym compatibility
     check_env(env, warn=True)
-
-    # Wrap in a Monitor-like wrapper if you want statistics
-    # (SB3 automatically wraps if needed, but you can wrap manually too)
 
     # Create SAC model
     model = SAC(

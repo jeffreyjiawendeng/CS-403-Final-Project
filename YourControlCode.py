@@ -8,11 +8,7 @@ class YourCtrl:
     def __init__(self, m: mujoco.MjModel, d: mujoco.MjData,
                  model_name: str = "sac_miniarm_pendulum.zip",
                  actuator_name: str = "wrist_pitch"):
-        """
-        Controller that uses a trained SAC policy.
-
-        If the SAC model file is not found, falls back to the old PD controller.
-        """
+        
         self.m = m
         self.d = d
         self.actuator_name = actuator_name
@@ -31,24 +27,14 @@ class YourCtrl:
         base_dir = os.path.dirname(os.path.realpath(__file__))
         model_path = os.path.join(base_dir, model_name)
 
-        if not os.path.exists(model_path):
-            # Fallback: PD control on all 6 joints (your original behavior)
-            print(f"[YourCtrl] WARNING: SAC model not found at {model_path}. "
-                  f"Falling back to PD controller.")
-            self.model = None
+        print(f"[YourCtrl] Loading SAC model from {model_path}")
+        # Load SAC without attaching a Gym env (we just use predict())
+        self.model = SAC.load(model_path)
+        # Not strictly necessary, but ensures policy is in eval mode
+        self.model.policy.eval()
 
-            self.init_qpos = d.qpos.copy()
-            self.kp = 150.0
-            self.kd = 5.2
-        else:
-            print(f"[YourCtrl] Loading SAC model from {model_path}")
-            # Load SAC without attaching a Gym env (we just use predict())
-            self.model = SAC.load(model_path)
-            # Not strictly necessary, but ensures policy is in eval mode
-            self.model.policy.eval()
-
-            # Observation dimension: qpos + qvel (must match training)
-            self.obs_dim = self.m.nq + self.m.nv
+        # Observation dimension: qpos + qvel (must match training)
+        self.obs_dim = self.m.nq + self.m.nv
 
     # --------- helpers ---------
 

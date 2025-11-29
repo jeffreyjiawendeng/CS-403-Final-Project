@@ -8,15 +8,6 @@ import mujoco
 
 
 class MiniArmPendulumEnv(gym.Env):
-    """
-    MuJoCo-based environment for balancing the pendulum attached to the arm.
-
-    - Uses your miniArm_with_pendulum.xml
-    - Only one actuator is controlled (default: 'wrist_pitch')
-    - Observation: qpos & qvel for all DOFs
-    - Reward: keep pendulum upright + small control penalty
-    - Episode terminates if pendulum tips past horizontal (local z down)
-    """
 
     metadata = {"render_modes": ["none"], "render_fps": 60}
 
@@ -146,11 +137,6 @@ class MiniArmPendulumEnv(gym.Env):
         }
 
         return obs, reward, terminated, truncated, info
-
-    def render(self):
-        # This minimal example does not implement a visual renderer
-        # You can hook this into a Mujoco viewer or use mujoco.viewer later.
-        return None
 
     def close(self):
         pass
