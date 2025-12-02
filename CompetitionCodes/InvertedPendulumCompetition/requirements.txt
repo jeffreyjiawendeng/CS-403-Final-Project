@@ -25,5 +25,5 @@ imageio~=2.34.0
 pyopengl~=3.1.7
 
 # Logging and experiment tracking
-tensorboard~=2.15.0
+tensorboard~=2.19.0
 rich~=13.7.0

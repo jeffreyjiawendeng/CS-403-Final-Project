@@ -206,12 +206,12 @@ class randomenv(gym.Env):
     #   if self.render_mode == "human":
     #     self.renderer.sync()
       # Compute reward
-      reward = self.compute_reward(action)
+      reward = self.compute_reward()
       
       # Check termination
       terminated = self.is_terminated()
       if terminated:
-          reward = -5
+          reward = -50
       truncated = False
 
       return self._get_obs(), reward, terminated, truncated, {}
@@ -238,8 +238,13 @@ class randomenv(gym.Env):
 
     angle = self.data.qpos[6]
     angle_vel = self.data.qvel[6]
-    action = self.data.ctrl/max_ctrl
-    reward = np.cos(angle) ** 2 - 0.01*angle_vel**2 - 0.01 * np.linalg.norm(action) -0.01 * np.linalg.norm(vel)
+    action = self.data.ctrl
+    
+    # reward 6
+    # reward = np.cos(angle) ** 2 - 0.01*angle_vel**2 - 0.1 * np.linalg.norm(action) -0.01 * np.linalg.norm(vel)
+    
+    # reward 7
+    reward = -1*(angle**2 + 0.1 * angle_vel**2) -0.1 * np.linalg.norm(vel) - 0.1 * np.linalg.norm(action)
     # reward = np.cos(angle) ** 2
     # reward = -1*(self.data.qpos[6] ** 2 + 0.01 * np.linalg.norm(self.data.ctrl))
     # hyper parameters weight for each: 0.1, 0.01, 0.001 --> 9 combinations
@@ -293,7 +298,7 @@ def main():
             )
         ),
         target_entropy = -6,
-        tensorboard_log="./logs/",
+        tensorboard_log="./logs_sac2/",
         verbose=0)
     # model = SAC(policy="MlpPolicy",env= env)
     # model = SAC.load("SAC_random", env)
@@ -302,13 +307,14 @@ def main():
     callback = SACMetricsCallback()
 
     # model.learn(total_timesteps=10000, callback = callback)
-    time_steps = 1_000_000
+    time_steps = 5_000_000
     chunks = 100_000
-    for i in range(int(time_steps/chunks)):
-        print(f"check point {i}")
-        model.learn(total_timesteps=chunks, callback = callback)
-        model.save(f"SAC_hp_obs_reward4")
-        model.save_replay_buffer( "SAC_hp_obs_reward4_buffer")
+    model.learn(total_timesteps=time_steps, callback = callback)
+    # for i in range(int(time_steps/chunks)):
+    #     print(f"check point {i}")
+    #     model.learn(total_timesteps=chunks, callback = callback)
+    model.save(f"SAC_hp_obs_reward7")
+    model.save_replay_buffer( "SAC_hp_obs_reward7_buffer")
     
     # rewards = callback.episode_rewards
     # print(rewards)
